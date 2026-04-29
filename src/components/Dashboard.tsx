@@ -59,6 +59,16 @@ export default function Dashboard() {
 
   const fetchDashboardData = async () => {
     try {
+      if (!user) {
+        console.error('No user available for fetchDashboardData');
+        return;
+      }
+      
+      if (!supabase) {
+        console.error('Supabase client not available');
+        return;
+      }
+      
       if (!refreshing) setLoading(true);
       else setRefreshing(true);
       const now = new Date();
@@ -73,7 +83,10 @@ export default function Dashboard() {
         .order('purchase_date', { ascending: false })
         .limit(5);
 
-      if (recentError) throw recentError;
+      if (recentError) {
+        console.error('Recent receipts query error:', recentError);
+        throw recentError;
+      }
       setReceipts(recentData || []);
 
       // Fetch ALL receipts for current month (for analysis)
@@ -85,7 +98,10 @@ export default function Dashboard() {
         .lte('purchase_date', end)
         .order('purchase_date', { ascending: false });
 
-      if (monthlyError) throw monthlyError;
+      if (monthlyError) {
+        console.error('Monthly data query error:', monthlyError);
+        throw monthlyError;
+      }
       setAllReceipts(monthlyData || []);
       
       const total = (monthlyData || []).reduce((sum: number, r: any) => sum + (r.total_amount || 0), 0);
@@ -102,7 +118,10 @@ export default function Dashboard() {
         .gte('purchase_date', prevStart)
         .lte('purchase_date', prevEnd);
 
-      if (prevError) throw prevError;
+      if (prevError) {
+        console.error('Previous month query error:', prevError);
+        throw prevError;
+      }
       const prevTotal = (prevData || []).reduce((sum: number, r: any) => sum + (r.total_amount || 0), 0);
       setPreviousMonthTotal(prevTotal);
 
@@ -134,7 +153,13 @@ export default function Dashboard() {
       
       setTopItems(topItemsArray);
     } catch (e) {
-      console.error(e);
+      console.error('Dashboard fetch error:', e);
+      if (e instanceof Error) {
+        console.error('Error message:', e.message);
+        console.error('Error stack:', e.stack);
+      } else {
+        console.error('Error details:', JSON.stringify(e, null, 2));
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -170,7 +195,10 @@ export default function Dashboard() {
         .delete()
         .eq('receipt_id', receiptId);
       
-      if (itemsError) throw itemsError;
+      if (itemsError) {
+        console.error('Delete items error:', itemsError);
+        throw itemsError;
+      }
       
       // Delete receipt
       const { error: receiptError } = await supabase
@@ -178,7 +206,10 @@ export default function Dashboard() {
         .delete()
         .eq('id', receiptId);
       
-      if (receiptError) throw receiptError;
+      if (receiptError) {
+        console.error('Delete receipt error:', receiptError);
+        throw receiptError;
+      }
       
       toast.success('Transaksi dihapus');
       fetchDashboardData(); // Refresh data
