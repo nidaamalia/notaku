@@ -8,12 +8,14 @@ import { Progress } from '@/components/ui/progress';
 import { formatCurrency } from '@/lib/utils';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { PlusCircle, FileText, TrendingUp, Receipt, ArrowRight, TrendingDown, Target } from 'lucide-react';
+import { PlusCircle, FileText, TrendingUp, Receipt, ArrowRight, TrendingDown, Target, RefreshCw } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useRefreshData } from '@/lib/useRefreshData';
 
 export default function Dashboard() {
   const { user, profile } = useAppStore();
   const router = useRouter();
+  const { refreshTrigger } = useRefreshData();
   const [receipts, setReceipts] = useState<any[]>([]);
   const [allReceipts, setAllReceipts] = useState<any[]>([]);
   const [monthlyTotal, setMonthlyTotal] = useState(0);
@@ -21,16 +23,42 @@ export default function Dashboard() {
   const [categoryData, setCategoryData] = useState<any[]>([]);
   const [topItems, setTopItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (user) {
       fetchDashboardData();
     }
-  }, [user]);
+  }, [user, refreshTrigger]);
+
+  // Auto refresh when window gains focus (user navigates back to dashboard)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (user && !loading) {
+        fetchDashboardData();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [user, loading]);
+
+  // Also check for visibility changes (when switching tabs)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && user && !loading) {
+        fetchDashboardData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [user, loading]);
 
   const fetchDashboardData = async () => {
     try {
-      setLoading(true);
+      if (!refreshing) setLoading(true);
+      else setRefreshing(true);
       const now = new Date();
       const start = startOfMonth(now).toISOString();
       const end = endOfMonth(now).toISOString();
@@ -107,6 +135,7 @@ export default function Dashboard() {
       console.error(e);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -130,11 +159,25 @@ export default function Dashboard() {
   return (
     <div className="p-4 space-y-4">
       {/* Welcome */}
-      <div className="mb-2">
-        <h1 className="text-xl font-bold text-plum">
-          Halo, {profile?.family_name || 'Keluarga'}!
-        </h1>
-        <p className="text-sm text-plum-muted">Kelola pengeluaranmu dengan mudah</p>
+      <div className="mb-2 flex justify-between items-start">
+        <div>
+          <h1 className="text-xl font-bold text-plum">
+            Halo, {profile?.family_name || 'Keluarga'}!
+          </h1>
+          <p className="text-sm text-plum-muted">Kelola pengeluaranmu dengan mudah</p>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            setRefreshing(true);
+            fetchDashboardData();
+          }}
+          disabled={loading || refreshing}
+          className="p-2"
+        >
+          <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+        </Button>
       </div>
 
       {/* Main Summary Cards */}

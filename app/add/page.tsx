@@ -15,10 +15,12 @@ import { v4 as uuidv4 } from 'uuid';
 import { STORE_TYPES, PRODUCT_CATEGORIES } from '@/lib/categories';
 import { processReceiptText } from '@/lib/groq';
 import { toast } from 'sonner';
+import { useRefreshData } from '@/lib/useRefreshData';
 
 export default function AddReceipt() {
   const { user } = useAppStore();
   const router = useRouter();
+  const { triggerRefresh } = useRefreshData();
   const [mode, setMode] = useState<'select' | 'ai' | 'manual'>('select');
   const [receiptText, setReceiptText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -169,7 +171,8 @@ export default function AddReceipt() {
       if (itemsError) throw itemsError;
 
       toast.success('Transaksi berhasil disimpan!');
-      window.location.href = '/';
+      triggerRefresh(); // Trigger dashboard refresh
+      router.push('/');
     } catch (error: any) {
       console.error(error);
       toast.error('Gagal menyimpan transaksi: ' + error.message);
@@ -182,7 +185,7 @@ export default function AddReceipt() {
     return (
       <div className="p-4 space-y-6">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={() => window.location.href = '/'}>
+          <Button variant="ghost" size="icon" onClick={() => router.push('/')}>
             <ArrowLeft size={20} />
           </Button>
           <h1 className="text-xl font-bold text-plum">Tambah Transaksi</h1>

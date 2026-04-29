@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Home, Search, PlusCircle, Settings, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/stores/useAppStore';
@@ -13,6 +13,7 @@ interface LayoutProps {
 export default function AppLayout({ children }: LayoutProps) {
   const { user } = useAppStore();
   const pathname = usePathname();
+  const router = useRouter();
 
   if (!user) {
     return <>{children}</>;
@@ -37,7 +38,7 @@ export default function AppLayout({ children }: LayoutProps) {
           {navItems.map((item) => (
             <button
               key={item.path}
-              onClick={() => window.location.href = item.path}
+              onClick={() => router.push(item.path)}
               className={cn(
                 "flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors",
                 pathname === item.path ? "text-primary" : "text-plum-muted"
