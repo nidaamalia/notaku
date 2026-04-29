@@ -14,6 +14,7 @@ import { X, Plus, FileText, Keyboard, ArrowLeft, Sparkles } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { STORE_TYPES, PRODUCT_CATEGORIES } from '@/lib/categories';
 import { processReceiptText } from '@/lib/groq';
+import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useRefreshData } from '@/lib/useRefreshData';
 
@@ -43,33 +44,44 @@ export default function AddReceipt() {
     ]
   });
 
-  const calculateTotal = (items: any[]) => items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+  const calculateTotal = (items: any[]) => items.reduce((sum: number, item: any) => sum + (item.quantity * item.unit_price), 0);
 
   const addItem = () => {
-    setFormData(prev => ({
-      ...prev,
-      items: [...prev.items, {
+    setFormData(prev => {
+      const newItems = [...prev.items, {
         id: uuidv4(),
         item_name: '',
         quantity: 1,
         unit_price: 0,
         total_price: 0,
         category: 'lainnya'
-      }]
-    }));
+      }];
+      const newTotalAmount = newItems.reduce((sum: number, item: any) => sum + (item.quantity * item.unit_price), 0);
+      
+      return {
+        ...prev,
+        items: newItems,
+        total_amount: newTotalAmount
+      };
+    });
   };
 
   const removeItem = (id: string) => {
-    setFormData(prev => ({
-      ...prev,
-      items: prev.items.filter(item => item.id !== id)
-    }));
+    setFormData(prev => {
+      const updatedItems = prev.items.filter(item => item.id !== id);
+      const newTotalAmount = updatedItems.reduce((sum: number, item: any) => sum + (item.quantity * item.unit_price), 0);
+      
+      return {
+        ...prev,
+        items: updatedItems,
+        total_amount: newTotalAmount
+      };
+    });
   };
 
   const updateItem = (id: string, field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      items: prev.items.map(item => {
+    setFormData(prev => {
+      const updatedItems = prev.items.map(item => {
         if (item.id === id) {
           const updatedItem = { ...item, [field]: value };
           
@@ -81,8 +93,17 @@ export default function AddReceipt() {
           return updatedItem;
         }
         return item;
-      })
-    }));
+      });
+      
+      // Recalculate total amount
+      const newTotalAmount = updatedItems.reduce((sum: number, item: any) => sum + (item.quantity * item.unit_price), 0);
+      
+      return {
+        ...prev,
+        items: updatedItems,
+        total_amount: newTotalAmount
+      };
+    });
   };
 
   const handleProcessText = async () => {
@@ -96,27 +117,31 @@ export default function AddReceipt() {
       const result = await processReceiptText(receiptText);
       
       if (result.success && result.data) {
+        const processedItems = result.data.items?.map((item: any) => ({
+          id: uuidv4(),
+          item_name: item.item_name || '',
+          quantity: item.quantity || 1,
+          unit_price: item.unit_price || 0,
+          total_price: item.total_price || 0,
+          category: item.category || 'lainnya'
+        })) || [{
+          id: uuidv4(),
+          item_name: '',
+          quantity: 1,
+          unit_price: 0,
+          total_price: 0,
+          category: 'lainnya'
+        }];
+        
+        const calculatedTotal = processedItems.reduce((sum: number, item: any) => sum + (item.quantity * item.unit_price), 0);
+        
         setFormData({
           store_name: result.data.store_name || '',
           store_type: result.data.store_type || 'lainnya',
           purchase_date: result.data.purchase_date || new Date().toISOString().split('T')[0],
-          total_amount: result.data.total_amount || 0,
+          total_amount: calculatedTotal,
           notes: result.data.notes || '',
-          items: result.data.items?.map((item: any) => ({
-            id: uuidv4(),
-            item_name: item.item_name || '',
-            quantity: item.quantity || 1,
-            unit_price: item.unit_price || 0,
-            total_price: item.total_price || 0,
-            category: item.category || 'lainnya'
-          })) || [{
-            id: uuidv4(),
-            item_name: '',
-            quantity: 1,
-            unit_price: 0,
-            total_price: 0,
-            category: 'lainnya'
-          }]
+          items: processedItems
         });
         
         toast.success('Struk berhasil diproses!');
@@ -348,7 +373,7 @@ export default function AddReceipt() {
                         </div>
                       </div>
                       <div className="flex justify-between items-center text-sm pt-1">
-                        <span className="text-plum-muted">Total: {item.quantity * item.unit_price}</span>
+                        <span className="text-plum-muted">Total: {formatCurrency(item.quantity * item.unit_price)}</span>
                         <Select value={item.category} onValueChange={v => updateItem(item.id, 'category', v)}>
                           <SelectTrigger className="w-[160px] h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
@@ -383,7 +408,7 @@ export default function AddReceipt() {
       <div className="fixed bottom-16 left-0 right-0 p-4 bg-white border-t border-border z-40 max-w-lg mx-auto">
         <div className="flex justify-between items-center mb-2">
           <span className="font-semibold text-plum">Total Transaksi</span>
-          <span className="font-bold text-lg text-primary">{formData.total_amount.toLocaleString('id-ID')}</span>
+          <span className="font-bold text-lg text-primary">{formatCurrency(formData.total_amount)}</span>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" className="flex-1" onClick={() => setMode('select')}>Kembali</Button>
