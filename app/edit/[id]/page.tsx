@@ -28,17 +28,20 @@ export default function EditReceipt({ params }: { params: Promise<{ id: string }
   const resolvedParams = use(params);
 
   useEffect(() => {
-    if (resolvedParams.id) {
+    if (resolvedParams.id && user) {
       loadData(resolvedParams.id);
     }
-  }, [resolvedParams.id]);
+  }, [resolvedParams.id, user]);
 
   const loadData = async (id: string) => {
+    if (!user) return;
+    
     try {
       const { data: receipt, error: rError } = await supabase
         .from('receipts')
         .select('*')
         .eq('id', id)
+        .eq('user_id', user.id)
         .single();
       
       if (rError) throw rError;
@@ -111,7 +114,10 @@ export default function EditReceipt({ params }: { params: Promise<{ id: string }
   };
 
   const saveChanges = async () => {
-    if (!user) return;
+    if (!user) {
+      toast.error('User tidak terautentikasi');
+      return;
+    }
     
     setSaving(true);
     try {
@@ -176,6 +182,11 @@ export default function EditReceipt({ params }: { params: Promise<{ id: string }
   };
 
   const deleteReceipt = async () => {
+    if (!user) {
+      toast.error('User tidak terautentikasi');
+      return;
+    }
+    
     if (!confirm('Hapus transaksi ini?')) return;
     
     setSaving(true);

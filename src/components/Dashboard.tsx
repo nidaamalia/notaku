@@ -11,6 +11,8 @@ import { id } from 'date-fns/locale';
 import { PlusCircle, FileText, TrendingUp, Receipt, ArrowRight, TrendingDown, Target, RefreshCw } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useRefreshData } from '@/lib/useRefreshData';
+import { Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function Dashboard() {
   const { user, profile } = useAppStore();
@@ -155,6 +157,36 @@ export default function Dashboard() {
   
   const savingTarget = profile?.monthly_income ? Math.round((profile.monthly_income * (profile.saving_target_pct || 20)) / 100) : 0;
   const savingPercentage = profile?.monthly_income ? Math.round((monthlyTotal / profile.monthly_income) * 100) : 0;
+
+  const deleteReceipt = async (receiptId: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent navigation to edit page
+    
+    if (!confirm('Hapus transaksi ini?')) return;
+    
+    try {
+      // Delete items first (foreign key constraint)
+      const { error: itemsError } = await supabase
+        .from('receipt_items')
+        .delete()
+        .eq('receipt_id', receiptId);
+      
+      if (itemsError) throw itemsError;
+      
+      // Delete receipt
+      const { error: receiptError } = await supabase
+        .from('receipts')
+        .delete()
+        .eq('id', receiptId);
+      
+      if (receiptError) throw receiptError;
+      
+      toast.success('Transaksi dihapus');
+      fetchDashboardData(); // Refresh data
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      toast.error('Gagal menghapus: ' + error.message);
+    }
+  };
 
   return (
     <div className="p-4 space-y-4">
@@ -372,7 +404,7 @@ export default function Dashboard() {
             {receipts.map((receipt) => (
               <Card
                 key={receipt.id}
-                className="cursor-pointer hover:bg-slate-50"
+                className="cursor-pointer hover:bg-slate-50 group"
                 onClick={() => router.push(`/edit/${receipt.id}`)}
               >
                 <CardContent className="p-4 flex justify-between items-center">
@@ -387,8 +419,17 @@ export default function Dashboard() {
                       )}
                     </div>
                   </div>
-                  <div className="font-bold text-plum">
-                    {formatCurrency(receipt.total_amount)}
+                  <div className="flex items-center gap-2">
+                    <div className="font-bold text-plum">
+                      {formatCurrency(receipt.total_amount)}
+                    </div>
+                    <button
+                      onClick={(e) => deleteReceipt(receipt.id, e)}
+                      className="p-1.5 text-red-500 hover:bg-red-50 rounded transition-colors"
+                      title="Hapus transaksi"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 </CardContent>
               </Card>

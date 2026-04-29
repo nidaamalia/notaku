@@ -16,6 +16,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { PRODUCT_CATEGORIES } from '@/lib/categories';
+import { Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const ALL_MONTHS = 'all';
 
@@ -162,6 +164,36 @@ export default function History() {
     return icons[category] || '💰';
   };
 
+  const deleteReceipt = async (receiptId: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent navigation to edit page
+    
+    if (!confirm('Hapus transaksi ini?')) return;
+    
+    try {
+      // Delete items first (foreign key constraint)
+      const { error: itemsError } = await supabase
+        .from('receipt_items')
+        .delete()
+        .eq('receipt_id', receiptId);
+      
+      if (itemsError) throw itemsError;
+      
+      // Delete receipt
+      const { error: receiptError } = await supabase
+        .from('receipts')
+        .delete()
+        .eq('id', receiptId);
+      
+      if (receiptError) throw receiptError;
+      
+      toast.success('Transaksi dihapus');
+      fetchHistory(); // Refresh data
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      toast.error('Gagal menghapus: ' + error.message);
+    }
+  };
+
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
@@ -248,7 +280,7 @@ export default function History() {
                         <div
                           key={receipt.id}
                           onClick={() => router.push(`/edit/${receipt.id}`)}
-                          className="p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors border border-transparent hover:border-slate-200"
+                          className="p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors border border-transparent hover:border-slate-200 group"
                         >
                           <div className="flex justify-between items-start gap-2">
                             <div className="flex-1">
@@ -264,9 +296,18 @@ export default function History() {
                                 )}
                               </div>
                             </div>
-                            <p className="font-semibold text-plum text-sm whitespace-nowrap">
-                              {formatCurrency(receipt.total_amount)}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold text-plum text-sm whitespace-nowrap">
+                                {formatCurrency(receipt.total_amount)}
+                              </p>
+                              <button
+                                onClick={(e) => deleteReceipt(receipt.id, e)}
+                                className="p-1.5 text-red-500 hover:bg-red-50 rounded transition-colors"
+                                title="Hapus transaksi"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ))}
