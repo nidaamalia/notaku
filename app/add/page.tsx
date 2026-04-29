@@ -341,8 +341,9 @@ export default function AddReceipt() {
                           <Label className="text-xs">Harga Satuan</Label>
                           <Input
                             type="number"
-                            value={item.unit_price}
-                            onChange={e => updateItem(item.id, 'unit_price', Number(e.target.value))}
+                            value={item.unit_price === 0 ? '' : item.unit_price}
+                            onChange={e => updateItem(item.id, 'unit_price', Number(e.target.value) || 0)}
+                            placeholder="0"
                           />
                         </div>
                       </div>
