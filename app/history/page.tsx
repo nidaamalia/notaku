@@ -247,7 +247,7 @@ export default function History() {
                       {entry.receipts.map((receipt) => (
                         <div
                           key={receipt.id}
-                          onClick={() => window.location.href = `/edit/${receipt.id}`}
+                          onClick={() => router.push(`/edit/${receipt.id}`)}
                           className="p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors border border-transparent hover:border-slate-200"
                         >
                           <div className="flex justify-between items-start gap-2">
