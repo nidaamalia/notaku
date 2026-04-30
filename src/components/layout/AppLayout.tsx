@@ -24,7 +24,7 @@ export default function AppLayout({ children }: LayoutProps) {
     { icon: FileText, label: 'Riwayat', path: '/history' },
     { icon: PlusCircle, label: 'Tambah', path: '/add', addBtn: true },
     { icon: Search, label: 'Cari', path: '/search' },
-    { icon: Settings, label: 'Profil', path: '/settings' },
+    { icon: Settings, label: 'Profil', path: '/profil' },
   ];
 
   return (
