@@ -286,7 +286,7 @@ export default function AddReceipt() {
   }
 
   return (
-    <div className="p-4 space-y-6 pb-24">
+    <div className="p-4 space-y-6 pb-[120px]">
       {/* Header */}
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" onClick={() => setMode('select')}>
@@ -363,9 +363,6 @@ export default function AddReceipt() {
             <CardContent className="p-4 space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="font-semibold text-plum">Daftar Barang</h3>
-                <Button variant="outline" size="sm" onClick={addItem}>
-                  <Plus size={16} className="mr-1" /> Tambah
-                </Button>
               </div>
               
               <div className="space-y-2">
@@ -440,15 +437,18 @@ export default function AddReceipt() {
       )}
 
       {/* Fixed Bottom Bar */}
-      <div className="fixed bottom-16 left-0 right-0 p-4 bg-white border-t border-border z-40 max-w-lg mx-auto">
+      <div className="fixed bottom-[60px] left-0 right-0 p-4 bg-white border-t border-border z-40 max-w-lg mx-auto">
         <div className="flex justify-between items-center mb-2">
           <span className="font-semibold text-plum">Total Transaksi</span>
           <span className="font-bold text-lg text-primary">{formatCurrency(formData.total_amount)}</span>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="flex-1" onClick={() => setMode('select')}>Kembali</Button>
-          <Button className="flex-[2] bg-primary" onClick={saveReceipt} disabled={loading || processingText}>
-            {loading ? 'Menyimpan...' : 'Simpan Transaksi'}
+        <div className="grid grid-cols-3 gap-2">
+          <Button variant="outline" onClick={() => setMode('select')}>Kembali</Button>
+          <Button variant="outline" onClick={addItem} className="gap-1">
+            <Plus size={16} /> Tambah
+          </Button>
+          <Button className="bg-primary" onClick={saveReceipt} disabled={loading || processingText}>
+            {loading ? 'Menyimpan...' : 'Simpan'}
           </Button>
         </div>
       </div>

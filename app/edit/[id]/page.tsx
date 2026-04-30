@@ -255,7 +255,7 @@ export default function EditReceipt({ params }: { params: Promise<{ id: string }
   if (!formData) return null;
 
   return (
-    <div className="p-4 space-y-6 pb-24">
+    <div className="p-4 space-y-6 pb-[120px]">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
@@ -306,20 +306,13 @@ export default function EditReceipt({ params }: { params: Promise<{ id: string }
       </Card>
 
       <Card>
-        <CardHeader className="pb-2 flex flex-row items-center justify-between">
+        <CardHeader className="pb-2">
           <CardTitle className="text-base text-plum">Daftar Barang</CardTitle>
-          <Button 
-            size="sm" 
-            onClick={addItem}
-            className="gap-1 h-8"
-          >
-            <Plus size={16} /> Tambah
-          </Button>
         </CardHeader>
         <CardContent className="space-y-4 p-0">
           {formData.items.length === 0 ? (
             <div className="p-4 text-center text-plum-muted text-sm">
-              Belum ada barang. Klik "Tambah" untuk menambahkan barang.
+              Belum ada barang. Gunakan tombol "Tambah Item" di bawah.
             </div>
           ) : (
             formData.items.map((item: any) => (
@@ -387,15 +380,18 @@ export default function EditReceipt({ params }: { params: Promise<{ id: string }
         </CardContent>
       </Card>
 
-      <div className="fixed bottom-16 left-0 right-0 p-4 bg-white border-t border-border z-40 max-w-lg mx-auto">
+      <div className="fixed bottom-[60px] left-0 right-0 p-4 bg-white border-t border-border z-40 max-w-lg mx-auto">
         <div className="flex justify-between items-center mb-2">
           <span className="font-semibold text-plum">Total Transaksi</span>
           <span className="font-bold text-lg text-primary">{formatCurrency(formData.total_amount)}</span>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="flex-1" onClick={() => router.back()}>Kembali</Button>
-          <Button className="flex-[2] bg-primary" onClick={saveChanges} disabled={saving}>
-            {saving ? 'Menyimpan...' : 'Simpan Editan'}
+        <div className="grid grid-cols-3 gap-2">
+          <Button variant="outline" onClick={() => router.back()}>Kembali</Button>
+          <Button variant="outline" onClick={addItem} className="gap-1">
+            <Plus size={16} /> Tambah
+          </Button>
+          <Button className="bg-primary" onClick={saveChanges} disabled={saving}>
+            {saving ? 'Menyimpan...' : 'Simpan'}
           </Button>
         </div>
       </div>
