@@ -61,6 +61,14 @@ export default function AddReceipt() {
       }];
       const newTotalAmount = newItems.reduce((sum: number, item: any) => sum + (item.quantity * item.unit_price), 0);
       
+      // Scroll to the new item after state update
+      setTimeout(() => {
+        const newItemElement = document.getElementById(`item-${newItems[newItems.length - 1].id}`);
+        if (newItemElement) {
+          newItemElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+      
       return {
         ...prev,
         items: newItems,
@@ -367,7 +375,7 @@ export default function AddReceipt() {
               
               <div className="space-y-2">
                 {formData.items.map((item, index) => (
-                  <div key={item.id} className="p-3 border rounded-lg space-y-3">
+                  <div key={item.id} id={`item-${item.id}`} className="p-3 border rounded-lg space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium">Barang {index + 1}</span>
                       {formData.items.length > 1 && (

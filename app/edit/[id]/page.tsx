@@ -74,17 +74,30 @@ export default function EditReceipt({ params }: { params: Promise<{ id: string }
   const calculateTotal = (items: any[]) => items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
 
   const addItem = () => {
-    setFormData((prev: any) => ({
-      ...prev,
-      items: [...prev.items, {
+    setFormData((prev: any) => {
+      const newItems = [...prev.items, {
         id: uuidv4(),
         item_name: '',
         quantity: 1,
         unit_price: 0,
         total_price: 0,
         category: 'lainnya'
-      }]
-    }));
+      }];
+      
+      // Scroll to the new item after state update
+      setTimeout(() => {
+        const newItemElement = document.getElementById(`item-${newItems[newItems.length - 1].id}`);
+        if (newItemElement) {
+          newItemElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+      
+      return {
+        ...prev,
+        items: newItems,
+        total_amount: calculateTotal(newItems)
+      };
+    });
   };
 
   const removeItem = (itemId: string) => {
@@ -316,7 +329,7 @@ export default function EditReceipt({ params }: { params: Promise<{ id: string }
             </div>
           ) : (
             formData.items.map((item: any) => (
-              <div key={item.id} className="p-4 border-b border-border space-y-3">
+              <div key={item.id} id={`item-${item.id}`} className="p-4 border-b border-border space-y-3">
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex-1">
                     <Input 
