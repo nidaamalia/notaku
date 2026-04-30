@@ -60,22 +60,20 @@ export default function Search() {
       const { data: receipts } = await supabase
         .from('receipts')
         .select('id, store_name, purchase_date')
-        .eq('user_id', user.id)
-        .returns<Receipt[]>();
+        .eq('user_id', user.id);
 
       if (!receipts || receipts.length === 0) {
         setResults([]);
         return;
       }
 
-      const receiptMap = new Map(receipts.map((r: Receipt) => [r.id, r]));
+      const receiptMap = new Map(receipts.map((r: any) => [r.id, r]));
 
       // 2. Fetch all matching items for this exact ILIKE
       const { data: items } = await supabase
         .from('receipt_items')
         .select('receipt_id, item_name_normalized, unit_price')
-        .ilike('item_name_normalized', `%${searchTerm.toLowerCase()}%`)
-        .returns<ReceiptItem[]>();
+        .ilike('item_name_normalized', `%${searchTerm.toLowerCase()}%`);
 
       if (!items) {
         setResults([]);
@@ -83,24 +81,24 @@ export default function Search() {
       }
 
       // Filter items to ensure they belong to this user's receipts
-      const userItems = items.filter(i => receiptMap.has(i.receipt_id));
+      const userItems = items.filter((i: ReceiptItem) => receiptMap.has(i.receipt_id));
 
       // 3. Aggregate data manually
       const groups = new Map<string, AggregatedPrice>();
       
       for (const item of userItems) {
-        const receipt = receiptMap.get(item.receipt_id)!;
+        const receipt = receiptMap.get(item.receipt_id) as any;
         const key = `${item.item_name_normalized}::${receipt.store_name}`;
         
         if (!groups.has(key)) {
           groups.set(key, {
-            store_name: receipt.store_name,
+            store_name: (receipt as any).store_name,
             item_name_normalized: item.item_name_normalized,
             avg_price: Number(item.unit_price), // will average later
             min_price: Number(item.unit_price),
             max_price: Number(item.unit_price),
             purchase_count: 1,
-            last_bought: receipt.purchase_date
+            last_bought: (receipt as any).purchase_date
           });
         } else {
           const acc = groups.get(key)!;
@@ -111,8 +109,8 @@ export default function Search() {
           
           acc.purchase_count += 1;
           
-          if (new Date(receipt.purchase_date) > new Date(acc.last_bought)) {
-            acc.last_bought = receipt.purchase_date;
+          if (new Date((receipt as any).purchase_date) > new Date(acc.last_bought)) {
+            acc.last_bought = (receipt as any).purchase_date;
           }
         }
       }

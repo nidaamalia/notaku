@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     receipts?.forEach(receipt => {
       totalSpending += receipt.total_amount || 0;
       
-      receipt.items?.forEach(item => {
+      receipt.items?.forEach((item: any) => {
         const category = item.category || 'Lainnya';
         categories[category] = (categories[category] || 0) + (item.total_price || 0);
         itemsSummary.push(`${item.item_name} (${item.quantity}x)`);

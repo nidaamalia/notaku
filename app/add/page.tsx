@@ -344,7 +344,7 @@ export default function AddReceipt() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="store_type">Jenis Toko</Label>
-                <Select value={formData.store_type} onValueChange={v => setFormData({...formData, store_type: v})}>
+                <Select value={formData.store_type} onValueChange={v => v ? setFormData({...formData, store_type: v}) : null}>
                   <SelectTrigger id="store_type">
                     <SelectValue placeholder="Pilih jenis toko" />
                   </SelectTrigger>
