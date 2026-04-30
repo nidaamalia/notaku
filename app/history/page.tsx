@@ -18,6 +18,7 @@ import {
 import { PRODUCT_CATEGORIES } from '@/lib/categories';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { DeleteDialog } from '@/components/DeleteDialog';
 
 const ALL_MONTHS = 'all';
 
@@ -45,6 +46,9 @@ export default function History() {
   const [selectedMonth, setSelectedMonth] = useState<string>(ALL_MONTHS);
   const [error, setError] = useState<string | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [receiptToDelete, setReceiptToDelete] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const retryCountRef = useRef(0);
   const MAX_RETRIES = 3;
 
@@ -73,7 +77,7 @@ export default function History() {
       setReceipts(data || []);
 
       const currentKey = getMonthKey(new Date().toISOString());
-      const hasCurrent = (data || []).some((r) => getMonthKey(r.purchase_date) === currentKey);
+      const hasCurrent = (data || []).some((r: any) => getMonthKey(r.purchase_date) === currentKey);
       if (hasCurrent) {
         setSelectedMonth(currentKey);
       } else {
@@ -167,14 +171,21 @@ export default function History() {
   const deleteReceipt = async (receiptId: string, event: React.MouseEvent) => {
     event.stopPropagation(); // Prevent navigation to edit page
     
-    if (!confirm('Hapus transaksi ini?')) return;
+    const receipt = receipts.find((r: any) => r.id === receiptId);
+    setReceiptToDelete(receipt);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!receiptToDelete) return;
     
+    setIsDeleting(true);
     try {
       // Delete items first (foreign key constraint)
       const { error: itemsError } = await supabase
         .from('receipt_items')
         .delete()
-        .eq('receipt_id', receiptId);
+        .eq('receipt_id', receiptToDelete.id);
       
       if (itemsError) throw itemsError;
       
@@ -182,7 +193,7 @@ export default function History() {
       const { error: receiptError } = await supabase
         .from('receipts')
         .delete()
-        .eq('id', receiptId);
+        .eq('id', receiptToDelete.id);
       
       if (receiptError) throw receiptError;
       
@@ -191,6 +202,9 @@ export default function History() {
     } catch (error: any) {
       console.error('Delete error:', error);
       toast.error('Gagal menghapus: ' + error.message);
+    } finally {
+      setIsDeleting(false);
+      setReceiptToDelete(null);
     }
   };
 
@@ -319,6 +333,14 @@ export default function History() {
           })}
         </div>
       )}
+      {/* Delete Confirmation Dialog */}
+      <DeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteConfirm}
+        itemName={receiptToDelete ? `${receiptToDelete.store_name} - ${formatCurrency(receiptToDelete.total_amount)}` : undefined}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 }

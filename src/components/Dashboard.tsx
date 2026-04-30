@@ -13,6 +13,7 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 import { useRefreshData } from '@/lib/useRefreshData';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { DeleteDialog } from '@/components/DeleteDialog';
 
 export default function Dashboard() {
   const { user, profile } = useAppStore();
@@ -26,6 +27,9 @@ export default function Dashboard() {
   const [topItems, setTopItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [receiptToDelete, setReceiptToDelete] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -186,14 +190,21 @@ export default function Dashboard() {
   const deleteReceipt = async (receiptId: string, event: React.MouseEvent) => {
     event.stopPropagation(); // Prevent navigation to edit page
     
-    if (!confirm('Hapus transaksi ini?')) return;
+    const receipt = receipts.find(r => r.id === receiptId);
+    setReceiptToDelete(receipt);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!receiptToDelete) return;
     
+    setIsDeleting(true);
     try {
       // Delete items first (foreign key constraint)
       const { error: itemsError } = await supabase
         .from('receipt_items')
         .delete()
-        .eq('receipt_id', receiptId);
+        .eq('receipt_id', receiptToDelete.id);
       
       if (itemsError) {
         console.error('Delete items error:', itemsError);
@@ -204,7 +215,7 @@ export default function Dashboard() {
       const { error: receiptError } = await supabase
         .from('receipts')
         .delete()
-        .eq('id', receiptId);
+        .eq('id', receiptToDelete.id);
       
       if (receiptError) {
         console.error('Delete receipt error:', receiptError);
@@ -216,6 +227,9 @@ export default function Dashboard() {
     } catch (error: any) {
       console.error('Delete error:', error);
       toast.error('Gagal menghapus: ' + error.message);
+    } finally {
+      setIsDeleting(false);
+      setReceiptToDelete(null);
     }
   };
 
@@ -468,6 +482,15 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteConfirm}
+        itemName={receiptToDelete ? `${receiptToDelete.store_name} - ${formatCurrency(receiptToDelete.total_amount)}` : undefined}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 }

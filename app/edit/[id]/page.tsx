@@ -16,6 +16,7 @@ import { STORE_TYPES, PRODUCT_CATEGORIES } from '@/lib/categories';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useRefreshData } from '@/lib/useRefreshData';
+import { DeleteDialog } from '@/components/DeleteDialog';
 
 export default function EditReceipt({ params }: { params: Promise<{ id: string }> }) {
   const { user } = useAppStore();
@@ -24,6 +25,8 @@ export default function EditReceipt({ params }: { params: Promise<{ id: string }
   const [formData, setFormData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const resolvedParams = use(params);
 
@@ -181,15 +184,17 @@ export default function EditReceipt({ params }: { params: Promise<{ id: string }
     }
   };
 
-  const deleteReceipt = async () => {
+  const deleteReceipt = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
     if (!user) {
       toast.error('User tidak terautentikasi');
       return;
     }
     
-    if (!confirm('Hapus transaksi ini?')) return;
-    
-    setSaving(true);
+    setIsDeleting(true);
     try {
       const id = resolvedParams.id;
       
@@ -205,7 +210,7 @@ export default function EditReceipt({ params }: { params: Promise<{ id: string }
       console.error(e);
       toast.error('Gagal menghapus: ' + e.message);
     } finally {
-      setSaving(false);
+      setIsDeleting(false);
     }
   };
 
@@ -357,6 +362,15 @@ export default function EditReceipt({ params }: { params: Promise<{ id: string }
           </Button>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteConfirm}
+        itemName={formData ? `${formData.store_name} - ${formatCurrency(formData.total_amount)}` : undefined}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 }
