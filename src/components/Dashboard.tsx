@@ -11,6 +11,7 @@ import { id } from 'date-fns/locale';
 import { PlusCircle, FileText, TrendingUp, Receipt, ArrowRight, TrendingDown, Target, RefreshCw } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useRefreshData } from '@/lib/useRefreshData';
+import { fetchRecentReceipts, fetchAllReceipts } from '@/lib/receiptQueries';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { DeleteDialog } from '@/components/DeleteDialog';
@@ -32,10 +33,28 @@ export default function Dashboard() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
+    console.log('Dashboard useEffect triggered:', { 
+      hasUser: !!user, 
+      refreshTrigger, 
+      timestamp: new Date().toISOString() 
+    });
+    
     if (user) {
       fetchDashboardData();
     }
   }, [user, refreshTrigger]);
+
+  // Auto refresh setiap 30 detik
+  useEffect(() => {
+    if (!user) return;
+    
+    const interval = setInterval(() => {
+      console.log('Auto refreshing dashboard data...');
+      fetchDashboardData();
+    }, 30000); // 30 detik
+
+    return () => clearInterval(interval);
+  }, [user]);
 
   // Auto refresh when window gains focus (user navigates back to dashboard)
   useEffect(() => {
@@ -61,8 +80,15 @@ export default function Dashboard() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [user, loading]);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (forceRefresh = false) => {
     try {
+      console.log('fetchDashboardData called:', { 
+        hasUser: !!user, 
+        hasSupabase: !!supabase, 
+        forceRefresh,
+        timestamp: new Date().toISOString() 
+      });
+      
       if (!user) {
         console.error('No user available for fetchDashboardData');
         return;
@@ -79,19 +105,23 @@ export default function Dashboard() {
       const start = startOfMonth(now).toISOString();
       const end = endOfMonth(now).toISOString();
 
-      // Fetch recent receipts for current month
-      const { data: recentData, error: recentError } = await supabase
-        .from('receipts')
-        .select('*')
-        .eq('user_id', user!.id)
-        .order('purchase_date', { ascending: false })
-        .limit(5);
-
-      if (recentError) {
-        console.error('Recent receipts query error:', recentError);
-        throw recentError;
-      }
-      setReceipts(recentData || []);
+      // Fetch recent receipts using consistent helper function
+      const recentData = await fetchRecentReceipts(user!.id, 5);
+      
+      // Debug logging untuk sinkronisasi
+      console.log('🏠 DASHBOARD - Recent receipts fetched:', {
+        count: recentData.length,
+        receipts: recentData.map((r: any) => ({
+          id: r.id,
+          store_name: r.store_name,
+          purchase_date: r.purchase_date,
+          total_amount: r.total_amount,
+          is_manual: r.is_manual
+        })),
+        timestamp: new Date().toISOString()
+      });
+      
+      setReceipts(recentData);
 
       // Fetch ALL receipts for current month (for analysis)
       const { data: monthlyData, error: monthlyError } = await supabase
@@ -247,11 +277,13 @@ export default function Dashboard() {
           variant="ghost"
           size="sm"
           onClick={() => {
+            console.log('Manual refresh triggered');
             setRefreshing(true);
-            fetchDashboardData();
+            fetchDashboardData(true);
           }}
           disabled={loading || refreshing}
           className="p-2"
+          title="Refresh data"
         >
           <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
         </Button>

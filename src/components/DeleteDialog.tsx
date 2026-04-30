@@ -48,12 +48,12 @@ export function DeleteDialog({
           </div>
           <DialogDescription className="text-left">
             {description}
-            {itemName && (
-              <div className="mt-2 p-2 bg-slate-50 rounded border">
-                <div className="text-sm font-medium text-slate-700">{itemName}</div>
-              </div>
-            )}
           </DialogDescription>
+          {itemName && (
+            <div className="mt-2 p-2 bg-slate-50 rounded border">
+              <div className="text-sm font-medium text-slate-700">{itemName}</div>
+            </div>
+          )}
         </DialogHeader>
         <DialogFooter>
           <Button

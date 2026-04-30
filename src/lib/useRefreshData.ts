@@ -7,5 +7,8 @@ interface RefreshDataState {
 
 export const useRefreshData = create<RefreshDataState>((set) => ({
   refreshTrigger: 0,
-  triggerRefresh: () => set((state) => ({ refreshTrigger: state.refreshTrigger + 1 })),
+  triggerRefresh: () => {
+    console.log('Refresh triggered, current trigger:', Date.now());
+    set((state) => ({ refreshTrigger: state.refreshTrigger + 1 }));
+  },
 }));

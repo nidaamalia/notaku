@@ -19,6 +19,8 @@ import { PRODUCT_CATEGORIES } from '@/lib/categories';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { DeleteDialog } from '@/components/DeleteDialog';
+import { fetchAllReceipts } from '@/lib/receiptQueries';
+import { useRefreshData } from '@/lib/useRefreshData';
 
 const ALL_MONTHS = 'all';
 
@@ -41,6 +43,7 @@ function formatMonthLabel(key: string) {
 export default function History() {
   const { user } = useAppStore();
   const router = useRouter();
+  const { refreshTrigger } = useRefreshData();
   const [receipts, setReceipts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<string>(ALL_MONTHS);
@@ -55,7 +58,7 @@ export default function History() {
   useEffect(() => {
     retryCountRef.current = 0;
     fetchHistory();
-  }, [user]);
+  }, [user, refreshTrigger]);
 
   const fetchHistory = async (isRetry = false) => {
     try {
@@ -64,17 +67,21 @@ export default function History() {
         setLoading(true);
       }
 
-      const { data, error: supabaseError } = await supabase
-        .from('receipts')
-        .select('*, items:receipt_items(*)')
-        .eq('user_id', user!.id)
-        .order('purchase_date', { ascending: false });
+      const data = await fetchAllReceipts(user!.id);
 
-      if (supabaseError) {
-        throw new Error(`Supabase error: ${supabaseError.message}`);
-      }
+      console.log('📚 HISTORY - All receipts fetched:', {
+        count: data.length,
+        receipts: data.slice(0, 5).map((r: any) => ({
+          id: r.id,
+          store_name: r.store_name,
+          purchase_date: r.purchase_date,
+          total_amount: r.total_amount,
+          is_manual: r.is_manual
+        })),
+        timestamp: new Date().toISOString()
+      });
 
-      setReceipts(data || []);
+      setReceipts(data);
 
       const currentKey = getMonthKey(new Date().toISOString());
       const hasCurrent = (data || []).some((r: any) => getMonthKey(r.purchase_date) === currentKey);
