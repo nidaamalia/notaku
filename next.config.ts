@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  turbopack: {},
+  // turbopack: {}, // Disabled to fix chunk loading errors
 };
 
 export default nextConfig;

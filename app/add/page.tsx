@@ -130,8 +130,8 @@ export default function AddReceipt() {
     try {
       const result = await processReceiptText(receiptText);
       
-      if (result.success && result.data) {
-        const processedItems = result.data.items?.map((item: any) => ({
+      if (result) {
+        const processedItems = result.items?.map((item: any) => ({
           id: uuidv4(),
           item_name: item.item_name || '',
           quantity: item.quantity || 1,
@@ -150,11 +150,11 @@ export default function AddReceipt() {
         const calculatedTotal = processedItems.reduce((sum: number, item: any) => sum + (item.quantity * item.unit_price), 0);
         
         setFormData({
-          store_name: result.data.store_name || '',
-          store_type: result.data.store_type || 'lainnya',
-          purchase_date: result.data.purchase_date || new Date().toISOString().split('T')[0],
+          store_name: result.store_name || '',
+          store_type: result.store_type || 'lainnya',
+          purchase_date: result.purchase_date || new Date().toISOString().split('T')[0],
           total_amount: calculatedTotal,
-          notes: result.data.notes || '',
+          notes: result.notes || '',
           items: processedItems
         });
         
@@ -173,6 +173,24 @@ export default function AddReceipt() {
 
   const saveReceipt = async () => {
     if (!user) return;
+    
+    // Validation
+    if (!formData.store_name.trim()) {
+      toast.error('Nama toko wajib diisi');
+      return;
+    }
+    
+    if (formData.items.length === 0) {
+      toast.error('Setidaknya satu barang harus ditambahkan');
+      return;
+    }
+    
+    const invalidItems = formData.items.filter(item => !item.item_name.trim());
+    if (invalidItems.length > 0) {
+      toast.error('Nama barang tidak boleh kosong');
+      return;
+    }
+    
     setLoading(true);
     try {
       const { data: receipt, error: receiptError } = await supabase
@@ -319,7 +337,7 @@ export default function AddReceipt() {
               <div className="space-y-2">
                 <Label htmlFor="store_type">Jenis Toko</Label>
                 <Select value={formData.store_type} onValueChange={v => setFormData({...formData, store_type: v})}>
-                  <SelectTrigger>
+                  <SelectTrigger id="store_type">
                     <SelectValue placeholder="Pilih jenis toko" />
                   </SelectTrigger>
                   <SelectContent>
@@ -388,14 +406,17 @@ export default function AddReceipt() {
                       </div>
                       <div className="flex justify-between items-center text-sm pt-1">
                         <span className="text-plum-muted">Total: {formatCurrency(item.quantity * item.unit_price)}</span>
-                        <Select value={item.category} onValueChange={v => updateItem(item.id, 'category', v)}>
-                          <SelectTrigger className="w-[160px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor={`category-${item.id}`} className="text-xs text-plum-muted">Kategori</Label>
+                          <Select value={item.category} onValueChange={v => updateItem(item.id, 'category', v)}>
+                            <SelectTrigger id={`category-${item.id}`} className="w-[160px] h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {PRODUCT_CATEGORIES.map(cat => (
                               <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
+                        </div>
                       </div>
                     </div>
                   </div>

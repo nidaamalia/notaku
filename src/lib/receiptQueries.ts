@@ -16,6 +16,12 @@ export interface Receipt {
 export async function fetchRecentReceipts(userId: string, limit: number = 5) {
   console.log('🔍 QUERY - Fetching recent receipts:', { userId, limit });
   
+  // Check if we're in mock mode
+  if (!userId || userId === 'mock-user-id') {
+    console.log('🔍 QUERY - Mock mode detected, returning empty receipts');
+    return [];
+  }
+  
   const { data, error } = await supabase
     .from('receipts')
     .select('*, items:receipt_items(*)')
@@ -25,6 +31,11 @@ export async function fetchRecentReceipts(userId: string, limit: number = 5) {
 
   if (error) {
     console.error('❌ QUERY - Error fetching recent receipts:', error);
+    // In mock mode, don't throw errors, just return empty data
+    if (error.message && error.message.includes('Mock mode')) {
+      console.log('🔍 QUERY - Mock mode error, returning empty receipts');
+      return [];
+    }
     throw error;
   }
 
@@ -40,6 +51,12 @@ export async function fetchRecentReceipts(userId: string, limit: number = 5) {
 export async function fetchAllReceipts(userId: string) {
   console.log('🔍 QUERY - Fetching all receipts:', { userId });
   
+  // Check if we're in mock mode
+  if (!userId || userId === 'mock-user-id') {
+    console.log('🔍 QUERY - Mock mode detected, returning empty receipts');
+    return [];
+  }
+  
   const { data, error } = await supabase
     .from('receipts')
     .select('*, items:receipt_items(*)')
@@ -48,6 +65,11 @@ export async function fetchAllReceipts(userId: string) {
 
   if (error) {
     console.error('❌ QUERY - Error fetching all receipts:', error);
+    // In mock mode, don't throw errors, just return empty data
+    if (error.message && error.message.includes('Mock mode')) {
+      console.log('🔍 QUERY - Mock mode error, returning empty receipts');
+      return [];
+    }
     throw error;
   }
 
