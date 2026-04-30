@@ -135,7 +135,7 @@ ${analysis.analysis || 'Analisis tidak tersedia'}`;
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <div className="text-sm text-plum-muted">Pendapatan</div>
-                <div className="font-semibold">{profile ? `Rp ${profile.monthly_income.toLocaleString('id-ID')}` : '-'}</div>
+                <div className="font-semibold">{profile ? (profile.monthly_income > 0 ? `Rp ${profile.monthly_income.toLocaleString('id-ID')}` : '-') : '-'}</div>
               </div>
               <div>
                 <div className="text-sm text-plum-muted">Target Tabungan</div>
@@ -169,8 +169,8 @@ ${analysis.analysis || 'Analisis tidak tersedia'}`;
                 <Input
                   id="income"
                   type="number"
-                  value={editData.monthly_income}
-                  onChange={(e) => setEditData({...editData, monthly_income: Number(e.target.value)})}
+                  value={editData.monthly_income || ''}
+                  onChange={(e) => setEditData({...editData, monthly_income: Number(e.target.value) || 0})}
                   required
                 />
               </div>
@@ -181,8 +181,8 @@ ${analysis.analysis || 'Analisis tidak tersedia'}`;
                   type="number"
                   min="0"
                   max="100"
-                  value={editData.saving_target_pct}
-                  onChange={(e) => setEditData({...editData, saving_target_pct: Number(e.target.value)})}
+                  value={editData.saving_target_pct || ''}
+                  onChange={(e) => setEditData({...editData, saving_target_pct: Number(e.target.value) || 0})}
                   required
                 />
               </div>
