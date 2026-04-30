@@ -27,6 +27,8 @@ export default function EditReceipt({ params }: { params: Promise<{ id: string }
   const [saving, setSaving] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteItemDialogOpen, setDeleteItemDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<any>(null);
   
   const resolvedParams = use(params);
 
@@ -86,14 +88,25 @@ export default function EditReceipt({ params }: { params: Promise<{ id: string }
   };
 
   const removeItem = (itemId: string) => {
+    const item = formData.items.find((i: any) => i.id === itemId);
+    setItemToDelete(item);
+    setDeleteItemDialogOpen(true);
+  };
+
+  const confirmDeleteItem = async () => {
+    if (!itemToDelete) return;
+    
     setFormData((prev: any) => {
-      const updatedItems = prev.items.filter((i: any) => i.id !== itemId);
+      const updatedItems = prev.items.filter((i: any) => i.id !== itemToDelete.id);
       return {
         ...prev,
         items: updatedItems,
         total_amount: calculateTotal(updatedItems)
       };
     });
+    
+    setDeleteItemDialogOpen(false);
+    setItemToDelete(null);
   };
 
   const updateItem = (itemId: string, field: string, value: any) => {
@@ -340,7 +353,7 @@ export default function EditReceipt({ params }: { params: Promise<{ id: string }
                     <Label className="text-xs">Harga Satuan</Label>
                     <Input 
                       type="number" 
-                      value={item.unit_price} 
+                      value={item.unit_price || ''} 
                       onChange={e => updateItem(item.id, 'unit_price', Number(e.target.value))} 
                     />
                   </div>
@@ -394,6 +407,15 @@ export default function EditReceipt({ params }: { params: Promise<{ id: string }
         onConfirm={handleDeleteConfirm}
         itemName={formData ? `${formData.store_name} - ${formatCurrency(formData.total_amount)}` : undefined}
         isDeleting={isDeleting}
+      />
+
+      {/* Delete Item Confirmation Dialog */}
+      <DeleteDialog
+        open={deleteItemDialogOpen}
+        onOpenChange={setDeleteItemDialogOpen}
+        onConfirm={confirmDeleteItem}
+        itemName={itemToDelete ? `${itemToDelete.item_name} - ${formatCurrency(itemToDelete.quantity * itemToDelete.unit_price)}` : undefined}
+        isDeleting={false}
       />
     </div>
   );

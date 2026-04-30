@@ -17,6 +17,7 @@ import { processReceiptText } from '@/lib/groq';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useRefreshData } from '@/lib/useRefreshData';
+import { DeleteDialog } from '@/components/DeleteDialog';
 
 export default function AddReceipt() {
   const { user } = useAppStore();
@@ -43,6 +44,8 @@ export default function AddReceipt() {
       }
     ]
   });
+  const [deleteItemDialogOpen, setDeleteItemDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<any>(null);
 
   const calculateTotal = (items: any[]) => items.reduce((sum: number, item: any) => sum + (item.quantity * item.unit_price), 0);
 
@@ -67,8 +70,16 @@ export default function AddReceipt() {
   };
 
   const removeItem = (id: string) => {
+    const item = formData.items.find(item => item.id === id);
+    setItemToDelete(item);
+    setDeleteItemDialogOpen(true);
+  };
+
+  const confirmDeleteItem = async () => {
+    if (!itemToDelete) return;
+    
     setFormData(prev => {
-      const updatedItems = prev.items.filter(item => item.id !== id);
+      const updatedItems = prev.items.filter(item => item.id !== itemToDelete.id);
       const newTotalAmount = updatedItems.reduce((sum: number, item: any) => sum + (item.quantity * item.unit_price), 0);
       
       return {
@@ -77,6 +88,9 @@ export default function AddReceipt() {
         total_amount: newTotalAmount
       };
     });
+    
+    setDeleteItemDialogOpen(false);
+    setItemToDelete(null);
   };
 
   const updateItem = (id: string, field: string, value: any) => {
@@ -366,7 +380,7 @@ export default function AddReceipt() {
                           <Label className="text-xs">Harga Satuan</Label>
                           <Input
                             type="number"
-                            value={item.unit_price === 0 ? '' : item.unit_price}
+                            value={item.unit_price || ''}
                             onChange={e => updateItem(item.id, 'unit_price', Number(e.target.value) || 0)}
                             placeholder="0"
                           />
@@ -417,6 +431,15 @@ export default function AddReceipt() {
           </Button>
         </div>
       </div>
+
+      {/* Delete Item Confirmation Dialog */}
+      <DeleteDialog
+        open={deleteItemDialogOpen}
+        onOpenChange={setDeleteItemDialogOpen}
+        onConfirm={confirmDeleteItem}
+        itemName={itemToDelete ? `${itemToDelete.item_name} - ${formatCurrency(itemToDelete.quantity * itemToDelete.unit_price)}` : undefined}
+        isDeleting={false}
+      />
     </div>
   );
 }
