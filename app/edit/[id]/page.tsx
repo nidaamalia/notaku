@@ -144,6 +144,30 @@ export default function EditReceipt({ params }: { params: Promise<{ id: string }
 
       if (receiptError) throw receiptError;
 
+      // Get current items from database to compare
+      const { data: currentDbItems, error: fetchError } = await supabase
+        .from('receipt_items')
+        .select('id')
+        .eq('receipt_id', id);
+      
+      if (fetchError) throw fetchError;
+
+      const currentItemIds = items.map((item: any) => item.id);
+      const dbItemIds = currentDbItems?.map((item: any) => item.id) || [];
+      
+      // Find items that need to be deleted (exist in DB but not in current state)
+      const itemsToDelete = dbItemIds.filter((dbId: string) => !currentItemIds.includes(dbId));
+      
+      // Delete items that are no longer in the state
+      if (itemsToDelete.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('receipt_items')
+          .delete()
+          .in('id', itemsToDelete);
+        
+        if (deleteError) throw deleteError;
+      }
+
       // Update or insert items
       for (const item of items) {
         const isExistingItem = item.receipt_id === id || (item.created_at !== undefined);
