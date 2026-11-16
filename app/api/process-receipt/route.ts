@@ -6,18 +6,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
 import { SYSTEM_PROMPT } from '@/lib/categories';
-
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
+import { validateReceiptInput } from '@/lib/receipt-input';
 
 export async function POST(req: NextRequest) {
   try {
-    const { text } = await req.json();
-
-    if (!text || text.trim().length === 0) {
-      return NextResponse.json({ error: 'Text is required' }, { status: 400 });
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
+    const input = validateReceiptInput(body);
+    if (!input.ok) {
+      return NextResponse.json({ error: input.error }, { status: 400 });
+    }
+    const { text } = input;
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: 'Receipt processing is not configured' }, { status: 503 });
+    }
+    const groq = new Groq({ apiKey });
 
     const systemPrompt = SYSTEM_PROMPT;
 

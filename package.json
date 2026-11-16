@@ -6,8 +6,9 @@
     "dev": "next dev -p 3004",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit",
+    "test": "tsx --test tests/receipt-input.test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
